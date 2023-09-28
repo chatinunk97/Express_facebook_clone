@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  firstName  String
+  lastName   String
+  email      String?   @unique
+  mobile     String?   @unique
+  password   String
+  profileImg String? //Image Link to other storage provider
+  coverImg   String?
+  posts      Post[]
+  //This line doesnot add a column but shows the relation to this column ; "Post[]" 
+  //'posts' is just a name we can define
+  comments   Comment[]
+  Like       Like[]
+  //From many to many section
+  requesters Friend[]  @relation("requester")
+  receiver   Friend[]  @relation("receiver")
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  message   String?
+  image     String?
+  createdAt DateTime  @default(now())
+  totalLike Int       @default(0)
+  userId    Int
+  ///////
+  user      User      @relation(fields: [userId], references: [id])
+  comments  Comment[]
+  //rename comments to non-capital because it's more easier to access when used in Express
+  //Most of the time table would be in small Case with S since it holds multiple records of that thing
+  likes     Like[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  message   String
+  createdAt DateTime @default(now())
+  /////Relation
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  //
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id])
+}
+
+model Like {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+  post   Post @relation(fields: [postId], references: [id])
+  postId Int
+}
+
+////////////////////// Many to Many table //////////////////////
+enum FriendStatus {
+  ACCEPTED
+  PENDING
+}
+
+model Friend {
+  id          Int          @id @default(autoincrement())
+  status      FriendStatus
+  createdAt   DateTime     @default(now())
+  requesterId Int
+  receiverId  Int
+  ///////
+  request     User         @relation("requester", fields: [requesterId], references: [id])
+  receiver    User         @relation("receiver", fields: [receiverId], references: [id])
+  userId      Int
+}
