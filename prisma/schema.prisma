@@ -74,9 +74,10 @@ model Friend {
   id          Int          @id @default(autoincrement())
   status      FriendStatus
   createdAt   DateTime     @default(now())
+  //The column
   requesterId Int
   receiverId  Int
-  ///////
+  /////// The relationship
   request     User         @relation("requester", fields: [requesterId], references: [id])
   receiver    User         @relation("receiver", fields: [receiverId], references: [id])
   userId      Int

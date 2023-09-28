@@ -1,0 +1,13 @@
+############### REGISTER ###############
+>> POST /auth/register >>
+BODY 
+    firstname , 
+    lastname , 
+    email OR mobile,
+    password,
+    confirmPassword
+RESPONSE
+ - 201 (Success)            { accessToken : String }  ex. {accessToken : 'aqwiodsaWQInsalD12sdaAAS'}
+ // After register => Auto login
+ - 400 (Error)              { message : String }
+ - 500 (ServerError)        { message : String }
