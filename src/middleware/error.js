@@ -1,4 +1,6 @@
-module.exports = (error,req,res,next)=>{
-    res.status(500).json({message : error.message})
-
-}
+module.exports = createError = (error, req, res, next) => {
+  if (error.name === "ValidationError") {
+    error.statusCode = 400;
+  }
+  res.status(error.statusCode || 500).json({ message: error.message });
+};
