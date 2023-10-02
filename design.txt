@@ -11,3 +11,10 @@ RESPONSE
  // After register => Auto login
  - 400 (Error)              { message : String }
  - 500 (ServerError)        { message : String }
+
+############### LOGIN ###############
+POST /auth/login
+    BODY emailOrMobile , password
+
+
+    

@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const prisma = require("../models/prisma");
 const jwt = require("jsonwebtoken");
 const createError = require("../utils/create-error");
+const authenticate = require("../middleware/authenticate");
 
 exports.register = async (req, res, next) => {
   try {
@@ -43,15 +44,20 @@ exports.login = async (req, res, next) => {
     if (!isMatch) {
       return next(createError("Invalid Cridential", 400));
     }
-    const payLoad = { userId: value.id };
+
+    const payLoad = { userId: user.id };
     const accessToken = jwt.sign(
       payLoad,
       process.env.JWT_SECRET_KEY || "secretKeyDayo",
       { expiresIn: process.env.JWT_EXPIRE }
     );
-    delete user.password
+    delete user.password;
     res.status(200).json({ accessToken, user });
   } catch (error) {
     next(error);
   }
+};
+
+exports.getMe = async (req, res, next) => {
+  res.status(200).json({ user: req.user });
 };
