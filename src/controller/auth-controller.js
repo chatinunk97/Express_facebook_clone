@@ -12,14 +12,15 @@ exports.register = async (req, res, next) => {
       return next(error);
     }
     value.password = await bcrypt.hash(value.password, 12);
-    const result = await prisma.user.create({ data: value });
+    const user = await prisma.user.create({ data: value });
     const payLoad = { userId: value.id };
     const accessToken = jwt.sign(
       payLoad,
       process.env.JWT_SECRET_KEY || "secretKeyDayo",
       { expiresIn: process.env.JWT_EXPIRE }
     );
-    res.status(201).json({ accessToken });
+    delete user.password
+    res.status(201).json({ accessToken , user });
   } catch (error) {
     next(error);
   }
