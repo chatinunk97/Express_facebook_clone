@@ -14,5 +14,12 @@ router.patch(
   userController.updateProfile
 );
 
+
+router.get('/friend',authenticateMiddleware,userController.getFriend)
+router.delete('/friend',authenticateMiddleware,userController.deleteFriend)
+router.delete('/unfriend',authenticateMiddleware,userController.unfriend)
+router.patch('/friend',authenticateMiddleware,userController.pathFriend)
 router.get('/:userId',authenticateMiddleware,userController.getUserById)
+
+router.post('/friend',authenticateMiddleware,userController.createFriend)
 module.exports = router;
