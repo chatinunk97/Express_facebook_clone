@@ -3,6 +3,77 @@ const { upload } = require("../utils/cloudinary-service");
 const prisma = require("../models/prisma");
 const fs = require("fs/promises");
 const { checkUserIdSchema } = require("../validators/user-validator");
+const {
+  AUTH_USER,
+  UNKNOWN,
+  STATUS_ACCEPTED,
+  FRIEND,
+  REQUESTER,
+  RECEIVER,
+} = require("../config/constants");
+
+const getTargetUserStatusWithAuthUser = async (targetUserId, authUserId) => {
+  if (targetUserId === authUserId) {
+    return AUTH_USER;
+  }
+  const relationship = await prisma.friend.findFirst({
+    where: {
+      OR: [
+        { requesterId: targetUserId, receiverId: authUserId },
+        { requesterId: authUserId, receiverId: targetUserId },
+      ],
+    },
+  });
+  if (!relationship) {
+    return UNKNOWN;
+  }
+  if (relationship.status === STATUS_ACCEPTED) {
+    return FRIEND;
+  }
+  if (relationship.requesterId === authUserId) {
+    return REQUESTER;
+  }
+  return RECEIVER;
+};
+
+const getTargetUserFriend = async (targetUserId) => {
+  try {
+    const relationships = await prisma.friend.findMany({
+      where: {
+        OR: [{ requesterId: targetUserId }, { receiverId: targetUserId }],
+        status: STATUS_ACCEPTED,
+      },
+      select: {
+        requester: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            mobile: true,
+            profileImg: true,
+            coverImg: true,
+          },
+        },
+        receiver: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            mobile: true,
+            profileImg: true,
+            coverImg: true,
+          },
+        },
+      },
+    });
+    const friends = relationships.map((el) =>
+      el.requester.id === targetUserId ? el.receiver : el.requester
+    );
+    return friends;
+  } catch (error) {}
+};
 
 exports.updateProfile = async (req, res, next) => {
   try {
@@ -21,8 +92,8 @@ exports.updateProfile = async (req, res, next) => {
           id: req.user.id,
         },
       });
-      delete response.coverImg
-    return res.json(response);
+      delete response.coverImg;
+      return res.json(response);
     }
     if (req.files.coverImage) {
       const url = await upload(req.files.coverImage[0].path);
@@ -38,7 +109,7 @@ exports.updateProfile = async (req, res, next) => {
       console.log(result);
       console.log(url);
     }
-    delete response.profileImg
+    delete response.profileImg;
     return res.json(response);
   } catch (error) {
     next(error);
@@ -65,12 +136,18 @@ exports.getUserById = async (req, res, next) => {
         id: userId,
       },
     });
+    let status = null;
+    let friends = null;
     if (user) {
       delete user.password;
-      return res.status(200).json({ user });
+      status = await getTargetUserStatusWithAuthUser(userId, req.user.id);
+      friends = await getTargetUserFriend(userId);
+      // return res.status(200).json({ user });
     }
-    return res.status(200).json({ user });
-    // return res.status(404).json({message : "user not found"})
+
+    return res
+      .status(200)
+      .json({ user, statusWithAuthUser: status, friends });
   } catch (error) {
     next(error);
   }
