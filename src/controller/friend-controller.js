@@ -142,11 +142,14 @@ exports.cancelRequest = async (req, res, next) => {
 };
 
 exports.unfriend = async (req, res, next) => {
+  console.log(req.params) //1
   try {
     const { error, value } = checkFriendIdSchema.validate(req.params);
     if (error) {
       return next(error);
     }
+    //{friendId : 1}
+
     const existRelationship = await prisma.friend.findFirst({
       where: {
         OR: [
@@ -156,9 +159,11 @@ exports.unfriend = async (req, res, next) => {
         status: STATUS_ACCEPTED,
       },
     });
+
     if (!existRelationship) {
       return next(createError("relationship does not exist", 400));
     }
+
     await prisma.friend.delete({
       where: {
         id: existRelationship.id,
